@@ -554,7 +554,8 @@ def multiprocess_write_tar(catchments,filenames,tar_buffs):
         ):
             pass
 
-def write_netcdf(data:np.ndarray, t_ax:list, catchments:list, prefix:str, filename:str, storage_type:str):
+def write_netcdf(data:np.ndarray, t_ax:list, catchments:list, prefix:str, filename:str,
+                 storage_type:str, ngen_variables:list):
     """
     Write 3D array data to a NetCDF file.
 
@@ -579,14 +580,16 @@ def write_netcdf(data:np.ndarray, t_ax:list, catchments:list, prefix:str, filena
     if storage_type == 's3':
         bucket, key = convert_url2key(nc_filename,'s3')
         with tempfile.NamedTemporaryFile(suffix='.nc') as tmpfile:
-            make_forcing_netcdf(tmpfile.name, catchments, t_utc, data)
+            make_forcing_netcdf(tmpfile.name, catchments, t_utc, data,
+                                ngen_variables)
             netcdf_cat_file_size = os.path.getsize(tmpfile.name) / B2MB
             tmpfile.flush()
             tmpfile.seek(0)
             print(f"Uploading netcdf forcings to S3: bucket={bucket}, key={key}")
             s3_client.upload_file(tmpfile.name, bucket, key)
     else:
-        make_forcing_netcdf(nc_filename, catchments, t_utc, data)
+        make_forcing_netcdf(nc_filename, catchments, t_utc, data,
+                            ngen_variables)
         print(f'netcdf has been written to {nc_filename}')
         netcdf_cat_file_size = os.path.getsize(nc_filename) / B2MB
     return netcdf_cat_file_size
